@@ -14,7 +14,7 @@
 		<!--监控使用的服务器名称-->
 		<ServerName>DDZServer</ServerName>
 		<!--监控的时间间隔（单位：分钟）-->
-		<Interval>3</Interval>
+		<Interval>5</Interval>
 	</Monitor>
 
 	<!--Redis连接配置-->
