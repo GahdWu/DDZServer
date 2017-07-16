@@ -1,0 +1,32 @@
+<Root>
+	<!--WebServerAddress-->
+	<WebServerAddress>192.168.1.109:9999</WebServerAddress>
+	<!-- SocketServer监听地址 -->
+	<ListenAddress>192.168.1.109:8888</ListenAddress>
+	
+	<!--是否是DEBUG模式-->
+	<DEBUG>true</DEBUG>
+
+	<!--监控相关配置-->
+	<Monitor>
+		<!--监控使用的服务器IP-->
+		<ServerIP>192.168.1.109:9999</ServerIP>
+		<!--监控使用的服务器名称-->
+		<ServerName>DDZServer</ServerName>
+		<!--监控的时间间隔（单位：分钟）-->
+		<Interval>3</Interval>
+	</Monitor>
+
+	<!--Redis连接配置-->
+	<Redis>
+		<ConnectionString>10.255.0.19:6379</ConnectionString>
+		<Password>55555</Password>
+		<Database>0</Database>
+		<MaxActive>500</MaxActive>
+		<MaxIdle>200</MaxIdle>
+		<IdleTimeout>300</IdleTimeout>
+		<DialConnectTimeout>10</DialConnectTimeout>
+		<!-- Token过期秒数 -->
+		<TokenExpireSeconds>600</TokenExpireSeconds>
+	</Redis>
+</Root>
