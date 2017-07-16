@@ -1,4 +1,4 @@
-<Root>
+﻿<Root>
 	<!--WebServerAddress-->
 	<WebServerAddress>192.168.1.109:9999</WebServerAddress>
 	<!-- SocketServer监听地址 -->
@@ -19,7 +19,7 @@
 
 	<!--Redis连接配置-->
 	<Redis>
-		<ConnectionString>10.255.0.19:6379</ConnectionString>
+		<ConnectionString>192.168.1.109:6379</ConnectionString>
 		<Password>55555</Password>
 		<Database>0</Database>
 		<MaxActive>500</MaxActive>
