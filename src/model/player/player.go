@@ -19,6 +19,9 @@ type Player struct {
 	// 玩家Id
 	id string
 
+	//玩家名称
+	name string
+
 	// 玩家对应的客户端Id
 	clientId int32
 
@@ -27,10 +30,19 @@ type Player struct {
 
 	//玩家当前的房间ID
 	roomId string
+
+	//玩家金币
+	money int
+
+	statusChangeCallback func(player *Player)
 }
 
 func (this *Player) GetId() string {
 	return this.id
+}
+
+func (this *Player) GetName() string {
+	return this.name
 }
 
 func (this *Player) GetRoomId() string {
@@ -47,6 +59,13 @@ func (this *Player) GetPlayerStatus() PlayerStatus {
 
 func (this *Player) SetPlayerStatus(status PlayerStatus) {
 	this.playerStatus = status
+	if this.statusChangeCallback != nil {
+		this.statusChangeCallback(this)
+	}
+}
+
+func (this *Player) SetStatusChangeCallback(changeCallback func(player *Player)) {
+	this.statusChangeCallback = changeCallback
 }
 
 func (this *Player) SetRoomId(roomId string) {

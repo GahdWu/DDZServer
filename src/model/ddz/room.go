@@ -8,11 +8,20 @@ import (
 	web "github.com/Gahd/DDZServer/src/model/responseObject"
 )
 
+type RoomStatus int
+
+const (
+	UnStart RoomStatus = iota
+	StartGame
+)
+
 type Room struct {
 	id      string
 	players map[string]*Player
 
 	hallType HallType
+
+	status RoomStatus
 
 	// 玩家锁
 	mutex sync.Mutex
@@ -31,6 +40,7 @@ func NewRoom(_id string, _hallType HallType, _closeFun func(roomId string) bool)
 		hallType: _hallType,
 		players:  map[string]*Player{},
 		closeFun: _closeFun,
+		status:   UnStart,
 	}
 }
 
@@ -48,6 +58,9 @@ func (this *Room) EnterRoom(player *Player) *web.ResultStatus {
 
 	//设置玩家的房间ID
 	player.SetRoomId(this.id)
+
+	//监听玩家状态改变
+	player.SetStatusChangeCallback(this.playerStatusChangeCallback)
 
 	//设置玩家状态
 	player.SetPlayerStatus(InRoomUnReady)
@@ -109,4 +122,31 @@ func (this *Room) AssembleToClient() interface{} {
 	info[common.PlayerCount] = len(this.players)
 
 	return info
+}
+
+//玩家状态改变回调
+func (this *Room) playerStatusChangeCallback(player *Player) {
+	if this.status == UnStart {
+		if this.CheckReady() {
+			//开始游戏
+		}
+	}
+
+	// 向每一个成员发送消息
+	PushStatusInfo(player, this.players)
+}
+
+//检查是否都准备好
+func (this *Room) CheckReady() bool {
+	if this.players == nil {
+		return false
+	}
+
+	for _, v := range this.players {
+		if v.GetPlayerStatus() != InRoomReady {
+			return false
+		}
+	}
+
+	return true
 }

@@ -7,14 +7,11 @@ import (
 	"github.com/Gahd/DDZServer/src/model/ddz"
 	. "github.com/Gahd/DDZServer/src/model/player"
 	web "github.com/Gahd/DDZServer/src/model/responseObject"
-	"github.com/Gahd/DDZServer/src/rpcServer"
 	"github.com/Gahd/DDZServer/src/webServer"
 )
 
-type DDZModel int
-
 func init() {
-	rpcServer.RegisterFunction(new(DDZModel))
+	//注册
 	webServer.RegisteHandler(webServer.NewHandler("/DDZ/GetRooms", getRooms, false,
 		"PlayerId"))
 	webServer.RegisteHandler(webServer.NewHandler("/DDZ/CreateRoom", createRoom, false,
@@ -206,5 +203,3 @@ func quickStart(w http.ResponseWriter, r *http.Request) *web.ResponseObject {
 
 	return result
 }
-
-//准备

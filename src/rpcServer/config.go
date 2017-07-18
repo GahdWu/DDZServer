@@ -2,6 +2,7 @@ package rpcServer
 
 import (
 	"github.com/Gahd/DDZServer/src/model/player"
+	. "github.com/Gahd/DDZServer/src/model/responseObject"
 )
 
 var (

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	. "github.com/Gahd/DDZServer/src/model/responseObject"
 	"moqikaka.com/goutil/logUtil"
 )
 
@@ -178,7 +179,7 @@ func deletePlayer(playerId string) {
 // request：请求内容字节数组(json格式)
 // 返回值：无
 func handleRequest(clientObj *Client, id int32, request []byte) {
-	responseObj := NewResponseObj()
+	responseObj := NewResponseObject()
 
 	// 解析请求字符串
 	var requestObj requestObject

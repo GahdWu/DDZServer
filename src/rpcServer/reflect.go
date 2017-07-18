@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Gahd/DDZServer/src/model/player"
+	. "github.com/Gahd/DDZServer/src/model/responseObject"
 	"github.com/Gahd/DDZServer/src/redisMgr"
 )
 
@@ -116,7 +117,7 @@ func RegisterFunction(structObject interface{}) {
 // clientObj：客户端对象
 // requestObj：请求对象
 func callFunction(clientObj *Client, requestObj *requestObject) {
-	responseObj := NewResponseObj()
+	responseObj := NewResponseObject()
 
 	var methodAndInOutTypes *methodAndInOutTypes
 	var ok bool

@@ -28,6 +28,7 @@ func (this *HallManager) init() {
 	defer this.mutex.Unlock()
 
 	this.halls = make(map[ddz.HallType]*ddz.Hall)
+
 	//创建大厅，TODO:根据配置创建
 	this.halls[ddz.DDZ_Normal] = ddz.NewHall(ddz.DDZ_Normal)
 }
