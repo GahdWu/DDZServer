@@ -1,86 +1,96 @@
-package poker
+package ddz
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+
+	. "github.com/Gahd/DDZServer/src/model/ddz/common"
+	. "github.com/Gahd/DDZServer/src/model/ddz/poker"
 )
 
-type PokerGroupType int
-
-const (
-	UnkownGroupType PokerGroupType = iota
-	DanPai                         //单牌
-	DuiZi                          //对子
-	SanDai                         //三张不带
-	SanDaiYi                       //三张带一张
-	SanDaiDui                      //三张带对子
-	FeiJi                          //飞机
-	ShunZi                         //顺子
-	LianDui                        //连对
-	ZhaDan                         //炸弹
+var (
+	pokerMutex = sync.Mutex{}
+	pokers     = []*Poker{}
 )
 
-type PokerGroup struct {
-	pokers         []*Poker
-	pokerGroupType PokerGroupType
+func init() {
+	pokerMutex.Lock()
+	defer pokerMutex.Unlock()
+
+	//所有数字
+	pokerColors := []PokerColor{HeiTao, HongTao, MeiHua, FangPian}
+	pokerNums := []PokerNum{Three, Four, Five, Six, Seven, Eight, Nine, Ten, J, Q, K, A, Two}
+
+	for _, n := range pokerNums {
+		for _, c := range pokerColors {
+			pokers = append(pokers, NewPoker(c, n))
+		}
+	}
+
+	//大小王
+	pokers = append(pokers, NewPoker(NoneColor, SKing))
+	pokers = append(pokers, NewPoker(NoneColor, BKing))
+
+	//展示所有扑克
+	//	ShowPokers(pokers)
 }
 
-func NewEmptyPokerGroup() *PokerGroup {
-	return &PokerGroup{}
+func GetFullPokers() []*Poker {
+	pokerMutex.Lock()
+	defer pokerMutex.Unlock()
+
+	result := make([]*Poker, len(pokers))
+	copy(result, pokers)
+
+	return result
 }
 
-func NewPokerGroup(_pokers []*Poker) *PokerGroup {
-	//	sortPokers(_pokers)
-	quickSortPoker(_pokers)
-	return &PokerGroup{
-		pokers:         _pokers,
-		pokerGroupType: GetPokerGroupTypeByPokers(_pokers),
+func GetRandFullPokers() []*Poker {
+	result := GetFullPokers()
+	RandPokers(result)
+	return result
+}
+
+func RandPokers(source []*Poker) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	pokerSize := len(source)
+
+	for i := 0; i < pokerSize; i++ {
+		randIndex1 := r.Intn(pokerSize)
+		source[randIndex1], source[i] = source[i], source[randIndex1]
 	}
 }
 
-func (this *PokerGroup) GetPokers() []*Poker {
-	return this.pokers
+func SliceDDZPokers(source []*Poker) (p1 []*Poker, p2 []*Poker, p3 []*Poker, threePoker []*Poker) {
+	p1 = make([]*Poker, 17) //17张
+	p2 = make([]*Poker, 17) //17张
+	p3 = make([]*Poker, 17) //17张
+
+	threePoker = make([]*Poker, 3) //地主牌
+
+	if len(source) != 54 {
+		panic(fmt.Sprintf("牌数量[%d]不足54", len(source)))
+	}
+
+	copy(p1, source[:17])
+	copy(p2, source[17:34])
+	copy(p3, source[34:51])
+	copy(threePoker, source[51:])
+
+	return
 }
 
-func (this *PokerGroup) GetPokerGroupType() PokerGroupType {
-	return this.pokerGroupType
-}
-
-//显示所有扑克
-func (this *PokerGroup) ShowAllPokers() {
-	for _, item := range this.pokers {
+func ShowPokers(source []*Poker) {
+	for _, item := range source {
+		if item == nil {
+			fmt.Println("nil")
+			continue
+		}
 		fmt.Println(item.ToString())
 	}
-	fmt.Println(this.pokerGroupType.ToString())
-}
-
-func (this PokerGroupType) ToString() string {
-	switch this {
-	case DanPai:
-		return "单牌"
-	case DuiZi:
-		return "对子"
-	case SanDai:
-		return "三不带"
-	case SanDaiYi:
-		return "三带一"
-	case SanDaiDui:
-		return "三带对"
-	case FeiJi:
-		return "飞机"
-	case ShunZi:
-		return "顺子"
-	case LianDui:
-		return "连对"
-	case ZhaDan:
-		return "炸弹"
-	}
-
-	return "未知牌型"
-}
-
-//比较
-func (this *PokerGroup) Compare(target PokerGroup) bool {
-	return false
 }
 
 //获取牌类型
@@ -91,19 +101,19 @@ func GetPokerGroupTypeByPokers(pokers []*Poker) PokerGroupType {
 	case length == 1: //只有一张牌，为单牌
 		return DanPai
 	case length == 2:
-		if pokers[0].num == SKing && pokers[1].num == BKing {
-			return ZhaDan //排序后，依次为小王和大王，则为王炸
-		} else if pokers[0].num == pokers[1].num {
+		if pokers[0].GetNum() == SKing && pokers[1].GetNum() == BKing {
+			return WangZha //排序后，依次为小王和大王，则为王炸
+		} else if pokers[0].GetNum() == pokers[1].GetNum() {
 			return DuiZi //两张牌，并且数字相同为对子
 		}
 		break
 	case length == 3: //三张牌，并且数字相同为三张不带
-		if pokers[0].num == pokers[1].num && pokers[0].num == pokers[2].num {
+		if pokers[0].GetNum() == pokers[1].GetNum() && pokers[0].GetNum() == pokers[2].GetNum() {
 			return SanDai
 		}
 		break
 	case length == 4: //四张牌，三带一、炸弹
-		if pokers[0].num == pokers[3].num {
+		if pokers[0].GetNum() == pokers[3].GetNum() {
 			return ZhaDan //排序后第一张和最后一张相同，炸弹
 		}
 
@@ -136,15 +146,14 @@ func GetPokerGroupTypeByPokers(pokers []*Poker) PokerGroupType {
 	return UnkownGroupType
 }
 
-//TODO:顺序有问题
 func getPokersSameNumInfo(pokers []*Poker) map[PokerNum]int {
 	info := make(map[PokerNum]int)
 
 	for _, p := range pokers {
-		if s, isExists := info[p.num]; !isExists {
-			info[p.num] = 1
+		if s, isExists := info[p.GetNum()]; !isExists {
+			info[p.GetNum()] = 1
 		} else {
-			info[p.num] = s + 1
+			info[p.GetNum()] = s + 1
 		}
 	}
 
@@ -172,16 +181,133 @@ func orderPokerNumsByAsc(nums []PokerNum) []PokerNum {
 	return nums
 }
 
-func sortPokers(pokers []*Poker) {
-	for i := 0; i < len(pokers)-1; i++ {
-		if int(pokers[i].num) > int(pokers[i+1].num) {
-			pokers[i], pokers[i+1] = pokers[i+1], pokers[i]
+//是否是三带一或三代二
+func isSanDaiYiOrDui(pokers []*Poker, daiSize int) bool {
+	sameNumInfo := getPokersSameNumInfo(pokers)
+	if len(sameNumInfo) != 2 {
+		return false
+	}
+
+	var (
+		isHaveThree = false
+		isHaveOne   = false
+	)
+
+	for _, s := range sameNumInfo {
+		switch s {
+		case daiSize:
+			isHaveOne = true
+			break
+		case 3:
+			isHaveThree = true
+			break
 		}
 	}
+
+	return isHaveThree && isHaveOne
+}
+
+//是否是顺子，排序后每个数字+1等于后面的数字，排除2和王
+func isShunZi(pokers []*Poker) bool {
+	if len(pokers) < 5 {
+		return false
+	}
+	num := -1
+	for _, p := range pokers {
+		switch p.GetNum() {
+		case Two:
+		case SKing:
+		case BKing:
+			return false //排除大小王和2
+		}
+
+		n := int(p.GetNum())
+		if num != -1 && num+1 != n {
+			return false
+		}
+		num = n
+	}
+
+	return true
+}
+
+//是否是连对，每个数字有两个，排序后每个数字+1等于后面的数字，排除2和王
+func isLianDui(pokers []*Poker) bool {
+	sameNumInfo := getPokersSameNumInfo(pokers)
+	if len(sameNumInfo) < 2 {
+		return false
+	}
+
+	num := -1
+	for _, pn := range orderPokerNumsByAsc(getNumInfoNumArray(sameNumInfo)) {
+		c := sameNumInfo[pn]
+		if c != 2 {
+			return false //不是对子
+		}
+		switch pn {
+		case Two:
+		case SKing:
+		case BKing:
+			return false //排除大小王和2
+		}
+
+		n := int(pn)
+		if num != -1 && num+1 != n {
+			return false
+		}
+		num = n
+	}
+
+	return true
+}
+
+//是否是飞机
+func isFeiJi(pokers []*Poker) bool {
+	sameNumInfo := getPokersSameNumInfo(pokers)
+
+	var (
+		threeSize = 0 //三个的数量
+		oneSize   = 0 //是否是带对
+		towSize   = 0 //是否是带单
+	)
+
+	num := -1
+	for _, pn := range orderPokerNumsByAsc(getNumInfoNumArray(sameNumInfo)) {
+		s := sameNumInfo[pn]
+		switch s {
+		case 1:
+			oneSize++
+			break
+		case 2:
+			towSize++
+			break
+		case 3:
+			switch pn {
+			case Two:
+			case SKing:
+			case BKing:
+				return false //排除大小王和2
+			}
+			n := int(pn)
+			if num != -1 && num+1 != n {
+				return false
+			}
+			num = n
+			threeSize++
+			break
+		}
+	}
+
+	if oneSize > 0 && towSize > 0 {
+		return false //带了对又带了单
+	}
+
+	//带的单牌数量、对子数量与三张数量相同或不带
+	return (oneSize == threeSize || towSize == threeSize || towSize+oneSize == 0) && threeSize > 1
 }
 
 //快速排序（排序10000个随机整数，用时约0.9ms）
-func quickSortPoker(pokers []*Poker) {
+func QuickSortPoker(pokers []*Poker) {
 	recursionSortPoker(pokers, 0, len(pokers)-1)
 }
 
@@ -226,139 +352,15 @@ func sortComparePoker(pokers []*Poker, left int, right int) bool {
 	leftPoker := pokers[left]
 	rightPoker := pokers[right]
 
-	leftNumValue := int(leftPoker.num)
-	rightNumValue := int(rightPoker.num)
+	leftNumValue := int(leftPoker.GetNum())
+	rightNumValue := int(rightPoker.GetNum())
 
 	if leftNumValue != rightNumValue {
 		return leftNumValue < rightNumValue
 	}
 
-	leftColorValue := int(leftPoker.color)
-	rightColorValue := int(rightPoker.color)
+	leftColorValue := int(leftPoker.GetColor())
+	rightColorValue := int(rightPoker.GetColor())
 
 	return leftColorValue < rightColorValue
-}
-
-//是否是三带一或三代二
-func isSanDaiYiOrDui(pokers []*Poker, daiSize int) bool {
-	sameNumInfo := getPokersSameNumInfo(pokers)
-	if len(sameNumInfo) != 2 {
-		return false
-	}
-
-	var (
-		isHaveThree = false
-		isHaveOne   = false
-	)
-
-	for _, s := range sameNumInfo {
-		switch s {
-		case daiSize:
-			isHaveOne = true
-			break
-		case 3:
-			isHaveThree = true
-			break
-		}
-	}
-
-	return isHaveThree && isHaveOne
-}
-
-//是否是顺子，排序后每个数字+1等于后面的数字，排除2和王
-func isShunZi(pokers []*Poker) bool {
-	if len(pokers) < 5 {
-		return false
-	}
-	num := -1
-	for _, p := range pokers {
-		switch p.num {
-		case Two:
-		case SKing:
-		case BKing:
-			return false //排除大小王和2
-		}
-
-		n := int(p.num)
-		if num != -1 && num+1 != n {
-			return false
-		}
-		num = n
-	}
-
-	return true
-}
-
-//是否是连对，每个数字有两个，排序后每个数字+1等于后面的数字，排除2和王
-func isLianDui(pokers []*Poker) bool {
-	sameNumInfo := getPokersSameNumInfo(pokers)
-	if len(sameNumInfo) < 2 {
-		return false
-	}
-
-	num := -1
-	for _, pn := range orderPokerNumsByAsc(getNumInfoNumArray(sameNumInfo)) {
-		c := sameNumInfo[pn]
-		if c != 2 {
-			return false //不是对子
-		}
-		switch pn {
-		case Two:
-		case SKing:
-		case BKing:
-			return false //排除大小王和2
-		}
-
-		n := int(pn)
-		if num != -1 && num+1 != n {
-			return false
-		}
-		num = n
-	}
-
-	return true
-}
-
-func isFeiJi(pokers []*Poker) bool {
-	sameNumInfo := getPokersSameNumInfo(pokers)
-
-	var (
-		threeSize = 0 //三个的数量
-		oneSize   = 0 //是否是带对
-		towSize   = 0 //是否是带单
-	)
-
-	num := -1
-	for _, pn := range orderPokerNumsByAsc(getNumInfoNumArray(sameNumInfo)) {
-		s := sameNumInfo[pn]
-		switch s {
-		case 1:
-			oneSize++
-			break
-		case 2:
-			towSize++
-			break
-		case 3:
-			switch pn {
-			case Two:
-			case SKing:
-			case BKing:
-				return false //排除大小王和2
-			}
-			n := int(pn)
-			if num != -1 && num+1 != n {
-				return false
-			}
-			num = n
-			threeSize++
-			break
-		}
-	}
-
-	if oneSize > 0 && towSize > 0 {
-		return false //带了对又带了单
-	}
-
-	//带的单牌数量、对子数量与三张数量相同或不带
-	return (oneSize == threeSize || towSize == threeSize || towSize+oneSize == 0) && threeSize > 1
 }

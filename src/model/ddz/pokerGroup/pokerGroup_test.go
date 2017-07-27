@@ -1,8 +1,11 @@
-package poker
+package pokerGroup
 
 import (
 	"fmt"
 	"testing"
+
+	. "github.com/Gahd/DDZServer/src/model/ddz/common"
+	. "github.com/Gahd/DDZServer/src/model/ddz/poker"
 )
 
 func TestPokerGroupType(t *testing.T) {
@@ -44,7 +47,7 @@ func TestPokerGroupType(t *testing.T) {
 	pg = NewPokerGroup(pokers)
 
 	pg.ShowAllPokers()
-	if pg.GetPokerGroupType() != ZhaDan {
+	if pg.GetPokerGroupType() != WangZha {
 		t.Fatalf("王炸,牌型识别错误=>%s", pg.GetPokerGroupType().ToString())
 	}
 	fmt.Println()

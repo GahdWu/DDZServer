@@ -4,15 +4,19 @@ import (
 	"sync"
 
 	"github.com/Gahd/DDZServer/src/model/common"
+	. "github.com/Gahd/DDZServer/src/model/ddz/poker"
 	. "github.com/Gahd/DDZServer/src/model/player"
 	web "github.com/Gahd/DDZServer/src/model/responseObject"
+	util "github.com/Gahd/DDZServer/src/utils/ddz"
 )
 
 type RoomStatus int
 
 const (
-	UnStart RoomStatus = iota
-	StartGame
+	UnStart   RoomStatus = iota //未开始
+	StartGame                   //开始游戏,发牌
+	CallTime                    //叫牌阶段
+	RunGame                     //游戏中
 )
 
 type Room struct {
@@ -28,6 +32,8 @@ type Room struct {
 	mutex sync.Mutex
 
 	closeFun func(roomId string) bool
+
+	threePokers []*Poker
 }
 
 func NewEmptyRoom() *Room {
@@ -123,7 +129,8 @@ func (this *Room) playerStatusChangeCallback(player *Player) {
 	if this.status == UnStart {
 		if this.CheckReady() {
 			//开始游戏
-			//发牌,叫牌
+			//发牌
+			//叫牌
 		}
 	}
 }
@@ -132,11 +139,30 @@ func (this *Room) startGame() {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 
+	//获取一副随机的牌
+	fullPokers := util.GetRandFullPokers()
+
+	//分牌
+	p1, p2, p3, three := util.SliceDDZPokers(fullPokers)
+
+	//排序
+	util.QuickSortPoker(p1)
+	util.QuickSortPoker(p2)
+	util.QuickSortPoker(p3)
+	util.QuickSortPoker(three)
+
+	this.threePokers = three
+
+	this.playerList[0].SetPokers(p1)
+	this.playerList[1].SetPokers(p2)
+	this.playerList[2].SetPokers(p3)
+
+	//TODO:推送消息
 }
 
 //检查是否都准备好
 func (this *Room) CheckReady() bool {
-	if this.players == nil {
+	if this.players == nil || len(this.players) == 0 {
 		return false
 	}
 

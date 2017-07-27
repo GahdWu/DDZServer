@@ -2,6 +2,7 @@ package player
 
 import (
 	"github.com/Gahd/DDZServer/src/model/common"
+	. "github.com/Gahd/DDZServer/src/model/ddz/poker"
 )
 
 //玩家状态
@@ -34,6 +35,9 @@ type Player struct {
 	//玩家金币
 	money int
 
+	//当前玩家的牌
+	pokers []*Poker
+
 	statusChangeCallback func(player *Player)
 }
 
@@ -57,6 +61,10 @@ func (this *Player) GetPlayerStatus() PlayerStatus {
 	return this.playerStatus
 }
 
+func (this *Player) GetPokers() []*Poker {
+	return this.pokers
+}
+
 func (this *Player) SetPlayerStatus(status PlayerStatus) {
 	this.playerStatus = status
 	if this.statusChangeCallback != nil {
@@ -70,6 +78,10 @@ func (this *Player) SetStatusChangeCallback(changeCallback func(player *Player))
 
 func (this *Player) SetRoomId(roomId string) {
 	this.roomId = roomId
+}
+
+func (this *Player) SetPokers(pokers []*Poker) {
+	this.pokers = pokers
 }
 
 func NewPlayer(_id string, _clientId int32) *Player {
