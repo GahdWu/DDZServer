@@ -2,6 +2,7 @@ package ddz
 
 import (
 	"github.com/Gahd/DDZServer/src/config"
+	"github.com/Gahd/DDZServer/src/model/common"
 	. "github.com/Gahd/DDZServer/src/model/player"
 	. "github.com/Gahd/DDZServer/src/model/responseObject"
 	"github.com/Gahd/DDZServer/src/rpcServer"
@@ -14,20 +15,13 @@ func PushStatusInfo(player *Player, pushPlayers []*Player) {
 
 	// 组装数据
 	data := make(map[string]interface{})
-	data["PlayerId"] = player.GetId()
+	data[common.PlayerId] = player.GetId()
+	data[common.PlayerStatus] = player.GetPlayerStatus()
 
 	responseObj.SetData(data)
 
 	// 向每一个成员发送消息
 	pushDataToClients(pushPlayers, responseObj, rpcServer.Con_HighPriority)
-}
-
-// 推送消息给客户端
-// member：成员对象
-// responseObj：响应对象
-// priority：消息的优先级
-func pushDataToClient(player *Player, responseObj *ResponseObject, priority rpcServer.Priority) {
-	pushDataToPlayer(player.GetId(), player.GetName(), responseObj, priority)
 }
 
 // 推送数据给客户端
@@ -39,6 +33,14 @@ func pushDataToClients(pushPlayers []*Player, responseObj *ResponseObject, prior
 	for _, player := range pushPlayers {
 		pushDataToClient(player, responseObj, priority)
 	}
+}
+
+// 推送消息给客户端
+// member：成员对象
+// responseObj：响应对象
+// priority：消息的优先级
+func pushDataToClient(player *Player, responseObj *ResponseObject, priority rpcServer.Priority) {
+	pushDataToPlayer(player.GetId(), player.GetName(), responseObj, priority)
 }
 
 // 向玩家推送数据

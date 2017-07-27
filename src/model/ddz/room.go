@@ -16,8 +16,9 @@ const (
 )
 
 type Room struct {
-	id      string
-	players map[string]*Player
+	id         string
+	players    map[string]*Player
+	playerList []*Player //便于发送消息
 
 	hallType HallType
 
@@ -56,6 +57,9 @@ func (this *Room) EnterRoom(player *Player) *web.ResultStatus {
 	//放入房间
 	this.players[player.GetId()] = player
 
+	//刷新玩家列表
+	this.FlushPlayerList()
+
 	//设置玩家的房间ID
 	player.SetRoomId(this.id)
 
@@ -75,7 +79,8 @@ func (this *Room) ExitRoom(player *Player) {
 
 	//从房间中删除房间
 	delete(this.players, player.GetId())
-	player.SetRoomId("")
+	//刷新玩家列表
+	this.FlushPlayerList()
 
 	//设置玩家状态
 	player.SetPlayerStatus(InHall)
@@ -84,6 +89,64 @@ func (this *Room) ExitRoom(player *Player) {
 	if this.IsEmpty() {
 		this.closeFun(this.id)
 	}
+}
+
+//刷新玩家列表
+func (this *Room) FlushPlayerList() {
+	playerList := []*Player{}
+	for _, v := range this.players {
+		playerList = append(playerList, v)
+	}
+
+	this.playerList = playerList
+}
+
+func (this *Room) CopyPlayerList() []*Player {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+
+	if this.playerList == nil {
+		return nil
+	}
+
+	playerList := make([]*Player, len(this.playerList))
+	copy(playerList, this.playerList)
+
+	return playerList
+}
+
+//玩家状态改变回调
+func (this *Room) playerStatusChangeCallback(player *Player) {
+	// 向每一个成员发送消息
+	PushStatusInfo(player, this.CopyPlayerList())
+
+	if this.status == UnStart {
+		if this.CheckReady() {
+			//开始游戏
+			//发牌,叫牌
+		}
+	}
+}
+
+func (this *Room) startGame() {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+
+}
+
+//检查是否都准备好
+func (this *Room) CheckReady() bool {
+	if this.players == nil {
+		return false
+	}
+
+	for _, v := range this.players {
+		if v.GetPlayerStatus() != InRoomReady {
+			return false
+		}
+	}
+
+	return true
 }
 
 //房间是否已满
@@ -122,31 +185,4 @@ func (this *Room) AssembleToClient() interface{} {
 	info[common.PlayerCount] = len(this.players)
 
 	return info
-}
-
-//玩家状态改变回调
-func (this *Room) playerStatusChangeCallback(player *Player) {
-	if this.status == UnStart {
-		if this.CheckReady() {
-			//开始游戏
-		}
-	}
-
-	// 向每一个成员发送消息
-	PushStatusInfo(player, this.players)
-}
-
-//检查是否都准备好
-func (this *Room) CheckReady() bool {
-	if this.players == nil {
-		return false
-	}
-
-	for _, v := range this.players {
-		if v.GetPlayerStatus() != InRoomReady {
-			return false
-		}
-	}
-
-	return true
 }
